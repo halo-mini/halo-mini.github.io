@@ -1,0 +1,165 @@
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: grid;
+    gap: 4px;
+    padding: 4px;
+    overflow: hidden;
+}
+
+.item {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.item img {
+    width: 100%;
+    height: 0;
+    flex: 1;
+    min-height: 0;
+    object-fit: contain;
+}
+
+.nama {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 3px 1px;
+    text-align: center;
+    font-size: clamp(8px, 2vw, 14px);
+    overflow-wrap: anywhere;
+}
+</style>
+
+<div class="container" id="container"></div>
+
+<script>
+var boxes = [
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s",
+    "A50s"
+];
+
+var container = document.getElementById("container");
+
+function aturGrid() {
+    var jumlah = boxes.length;
+    if (jumlah === 0) return;
+
+    var rasioLayar = window.innerWidth / window.innerHeight;
+    var kolom = Math.ceil(Math.sqrt(jumlah * rasioLayar));
+    var baris = Math.ceil(jumlah / kolom);
+
+    container.style.gridTemplateColumns =
+        "repeat(" + kolom + ", minmax(0, 1fr))";
+
+    container.style.gridTemplateRows =
+        "repeat(" + baris + ", minmax(0, 1fr))";
+}
+
+function muatGambar(box, img) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open(
+        "GET",
+        "https://posttestserver.dev/p/" +
+        encodeURIComponent(box) + "/latest/json",
+        true
+    );
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                var base64 = data.body;
+
+                if (base64) {
+                    img.src = base64.startsWith("data:image/")
+                        ? base64
+                        : "data:image/jpeg;base64," + base64;
+                }
+            } catch (e) {
+                console.error("Gagal membaca box " + box, e);
+            }
+        }
+    };
+
+    xhr.onerror = function () {
+        console.error("Gagal mengambil gambar box " + box);
+    };
+
+    xhr.send();
+}
+
+boxes.forEach(function (box) {
+    var item = document.createElement("div");
+    item.className = "item";
+
+    var img = document.createElement("img");
+    img.alt = box;
+
+    var nama = document.createElement("div");
+    nama.className = "nama";
+    nama.textContent = box;
+
+    item.appendChild(img);
+    item.appendChild(nama);
+    container.appendChild(item);
+
+    // Simpan nama box pada elemen gambar
+    img.dataset.box = box;
+
+    // Muat gambar pertama kali
+    muatGambar(box, img);
+});
+
+aturGrid();
+window.addEventListener("resize", aturGrid);
+
+// Refresh gambar setiap 1 menit
+setInterval(function () {
+    var gambar = container.querySelectorAll("img");
+
+    gambar.forEach(function (img) {
+        muatGambar(img.dataset.box, img);
+    });
+}, 60000);
+</script>
